@@ -56,39 +56,48 @@
       (let [input-request (u/resource-string test-suite-dir name "req")
             canonical-request (u/resource-string test-suite-dir name "creq")
             string-to-sign (u/resource-string test-suite-dir name "sts")
-            authorization (u/resource-string test-suite-dir name "authz")]
+            authorization (u/resource-string test-suite-dir name "authz")
 
-      (testing (str "creating canonical request for " name)
-        (let  [{:keys [method uri headers query payload]} (u/parse-request input-request)]
-          (is
-           (= canonical-request 
-              (sut/aws4-auth-canonical-request method uri query payload (sut/aws4-auth-canonical-headers headers)))
-           (str "returns valid canonical request for " name))))
+            {:keys [method uri headers query payload]} (u/parse-request input-request)
+            canonical-headers (sut/canonical-headers headers)
+            string-to-sign (sut/string-to-sign {:timestamp timestamp
+                                                :method method :uri uri
+                                                :query query :payload payload
+                                                :short-timestamp short-timestamp
+                                                :region region :service service
+                                                :headers canonical-headers})]
 
-      (testing (str "creating string-to-sign for " name)
-        (let  [{:keys [method uri headers query payload]} (u/parse-request input-request)
-              canonical-headers (sut/aws4-auth-canonical-headers headers)]
+        (testing (str "creating canonical request for " name)
           (is
-           (= string-to-sign 
-              (sut/string-to-sign timestamp method uri query payload short-timestamp
-                                  region service canonical-headers))
-           (str "returns valid string-to-sign for " name))))
-      (testing (str "creating signature for " name)
-        (let  [{:keys [method uri headers query payload]} (u/parse-request input-request)
-              canonical-headers (sut/aws4-auth-canonical-headers headers)
-              string-to-sign (sut/string-to-sign timestamp method uri query payload
-                                                 short-timestamp region service canonical-headers)]
-          (is
-           (= (u/parse-signature authorization) 
-              (sut/signature secret-key short-timestamp region service string-to-sign))
-           (str "returns valid signature for " name))))
+           (= canonical-request
+              (sut/canonical-request {:method method :uri uri
+                                      :query query :payload payload
+                                      :headers (sut/canonical-headers headers)}))
+           (str "returns valid canonical request for " name)))
 
-      (testing (str "creating authorization header for " name)
-        (let  [{:keys [method uri headers query payload]} (u/parse-request input-request)]
+        (testing (str "creating string-to-sign for " name)
           (is
-           (= authorization 
-              (sut/aws4-authorisation
-               {:method method :uri uri :query query :headers headers
-                :payload payload :region region :service service
-                :access-key access-key-id :secret secret-key}))
-           (str "returns valid authorization header for " name))))))))
+           (= string-to-sign
+              (sut/string-to-sign {:timestamp timestamp :method method
+                                   :uri uri :query query :payload payload
+                                   :short-timestamp short-timestamp
+                                   :region region :service service
+                                   :headers canonical-headers}))
+           (str "returns valid string-to-sign for " name)))
+
+        (testing (str "creating signature for " name)
+          (is
+           (= (u/parse-signature authorization)
+              (sut/signature {:secret secret-key
+                              :short-timestamp short-timestamp
+                              :region region :service service
+                              :string-to-sign string-to-sign}))
+           (str "returns valid signature for " name)))
+
+        (testing (str "creating authorization header for " name)
+          (is
+           (= authorization
+              (sut/authorize {:method method :uri uri :query query :headers headers
+                                       :payload payload :region region :service service
+                                       :access-key access-key-id :secret secret-key}))
+           (str "returns valid authorization header for " name)))))))
