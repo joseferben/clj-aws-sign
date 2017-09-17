@@ -67,16 +67,17 @@
       (#(map (fn [pair] (str/join "=" pair)) %))
       (str/join "&")))
 
-(defn aws4-authorisation [method uri query headers payload region service access-key-id secret-key]
+(defn aws4-authorisation
+  [{:keys [method uri query headers payload region service access-key secret]}]
   (let [canonical-headers (aws4-auth-canonical-headers headers)
         timestamp (get canonical-headers "x-amz-date")
         short-timestamp (.substring ^String timestamp 0 8)
         string-to-sign (string-to-sign timestamp method uri query payload short-timestamp region service
                                            canonical-headers)
-        signature (signature secret-key short-timestamp region service string-to-sign)]
+        signature (signature secret short-timestamp region service string-to-sign)]
     (str
      "AWS4-HMAC-SHA256 "
-     "Credential=" access-key-id "/" short-timestamp "/" region "/" service
+     "Credential=" access-key "/" short-timestamp "/" region "/" service
      "/aws4_request, "
      "SignedHeaders=" (str/join ";" (keys canonical-headers)) ", "
      "Signature=" signature)))

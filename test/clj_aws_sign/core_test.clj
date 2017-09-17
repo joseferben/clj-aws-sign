@@ -53,42 +53,42 @@
 (deftest signature-tests
   (testing "AWS V4 signature:"
     (doseq [name test-requests]
+      (let [input-request (u/resource-string test-suite-dir name "req")
+            canonical-request (u/resource-string test-suite-dir name "creq")
+            string-to-sign (u/resource-string test-suite-dir name "sts")
+            authorization (u/resource-string test-suite-dir name "authz")]
+
       (testing (str "creating canonical request for " name)
-        (let [input-string (u/resource-string test-suite-dir name "req")
-              output-string (u/resource-string test-suite-dir name "creq")
-              {:keys [method uri headers query payload]} (u/parse-request input-string)]
+        (let  [{:keys [method uri headers query payload]} (u/parse-request input-request)]
           (is
-           (= output-string
+           (= canonical-request 
               (sut/aws4-auth-canonical-request method uri query payload (sut/aws4-auth-canonical-headers headers)))
            (str "returns valid canonical request for " name))))
 
       (testing (str "creating string-to-sign for " name)
-        (let [input-string (u/resource-string test-suite-dir name "req")
-              output-string (u/resource-string test-suite-dir name "sts")
-              {:keys [method uri headers query payload]} (u/parse-request input-string)
+        (let  [{:keys [method uri headers query payload]} (u/parse-request input-request)
               canonical-headers (sut/aws4-auth-canonical-headers headers)]
           (is
-           (= output-string
+           (= string-to-sign 
               (sut/string-to-sign timestamp method uri query payload short-timestamp
                                   region service canonical-headers))
            (str "returns valid string-to-sign for " name))))
       (testing (str "creating signature for " name)
-        (let [input-string (u/resource-string test-suite-dir name "req")
-              output-string (u/parse-signature (u/resource-string test-suite-dir name "authz"))
-              {:keys [method uri headers query payload]} (u/parse-request input-string)
+        (let  [{:keys [method uri headers query payload]} (u/parse-request input-request)
               canonical-headers (sut/aws4-auth-canonical-headers headers)
               string-to-sign (sut/string-to-sign timestamp method uri query payload
                                                  short-timestamp region service canonical-headers)]
           (is
-           (= output-string
+           (= (u/parse-signature authorization) 
               (sut/signature secret-key short-timestamp region service string-to-sign))
            (str "returns valid signature for " name))))
 
       (testing (str "creating authorization header for " name)
-        (let [input-string (u/resource-string test-suite-dir name "req")
-              {:keys [method uri headers query payload]} (u/parse-request input-string)
-              output-string (u/resource-string test-suite-dir name "authz")]
+        (let  [{:keys [method uri headers query payload]} (u/parse-request input-request)]
           (is
-           (= output-string
-              (sut/aws4-authorisation method uri query headers payload region service access-key-id secret-key))
-           (str "returns valid authorization header for " name)))))))
+           (= authorization 
+              (sut/aws4-authorisation
+               {:method method :uri uri :query query :headers headers
+                :payload payload :region region :service service
+                :access-key access-key-id :secret secret-key}))
+           (str "returns valid authorization header for " name))))))))
