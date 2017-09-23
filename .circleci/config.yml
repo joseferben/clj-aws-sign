@@ -1,0 +1,22 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/clj-aws-sign
+    docker:
+      - image: circleci/clojure:lein-2.7.1
+    environment:
+      LEIN_ROOT: nbd
+      JVM_OPTS: -Xmx3200m
+    steps:
+      - checkout
+      - restore_cache:
+          key: clj-aws-sign-{{ checksum "project.clj" }}
+      - run: lein deps
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: clj-aws-sign-{{ checksum "project.clj" }}
+      - run: lein do test, uberjar
+      - store_artifacts:
+          path: target/uberjar/clj-aws-sign.jar
+          destination: uberjar
