@@ -88,7 +88,7 @@
         (testing (str "creating signature for " name)
           (is
            (= (u/parse-signature authorization)
-              (sut/signature {:secret secret-key
+              (sut/signature {:secret-key secret-key
                               :short-timestamp short-timestamp
                               :region region :service service
                               :string-to-sign string-to-sign}))
@@ -99,5 +99,5 @@
            (= authorization
               (sut/authorize {:method method :uri uri :query query :headers headers
                                        :payload payload :region region :service service
-                                       :access-key access-key-id :secret secret-key}))
+                                       :access-key access-key-id :secret-key secret-key}))
            (str "returns valid authorization header for " name)))))))

@@ -156,8 +156,8 @@
 
 (defn signature
   "Returns hmac-256 signature given credential scope, secret and string-to-sign"
-  [{:keys [secret short-timestamp region service string-to-sign]}]
-  (-> (signing-key secret short-timestamp region service)
+  [{:keys [secret-key short-timestamp region service string-to-sign]}]
+  (-> (signing-key secret-key short-timestamp region service)
       (hmac-256 string-to-sign)
       (as-hex-str)))
 
@@ -174,16 +174,16 @@
 
 (defn authorize
   "Returns complete authorization header given data of request-to-sign including headers"
-  [{:keys [method uri query headers payload region service access-key secret]}]
+  [{:keys [method uri query headers payload date region service access-key secret-key]}]
   (let [canonical-headers (canonical-headers headers)
-        timestamp (get canonical-headers "x-amz-date")
+        timestamp (get canonical-headers "x-amz-date" date)
         short-timestamp (.substring ^String timestamp 0 8)
         string-to-sign (string-to-sign {:timestamp timestamp :method method
                                         :uri uri :query query :payload payload
                                         :short-timestamp short-timestamp
                                         :region region :service service
                                         :headers canonical-headers})
-        signature (signature {:secret secret
+        signature (signature {:secret-key secret-key
                               :short-timestamp short-timestamp
                               :region region :service service
                               :string-to-sign string-to-sign})]
