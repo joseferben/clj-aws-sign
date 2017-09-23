@@ -2,7 +2,7 @@
 
 A clojure library that implements the [Signature Version 4 Signing Process](http://docs.aws.amazon.com/general/latest/gr/signature-version-4.html). It is inspired by [s3-beam](https://github.com/martinklepsch/s3-beam) and [this blog post](http://sapient-pair.com/blog/2016/03/08/clojure-aws4-auth/). This library can be used to sign requests, for instance by implementing a signing service.
 
-This library passes the [Signature Version 4 Test Suite](http://docs.aws.amazon.com/general/latest/gr/signature-v4-test-suite.html). ![Badge](https://circleci.com/gh/jerben/clj-aws-sign.svg?style=shield&circle-token=a896fa25d5dca658b03b43c51c11d6cf25ee8598 "Badge")
+This library [passes](https://circleci.com/gh/jerben/clj-aws-sign) the [Signature Version 4 Test Suite](http://docs.aws.amazon.com/general/latest/gr/signature-v4-test-suite.html). ![Badge](https://circleci.com/gh/jerben/clj-aws-sign.svg?style=shield&circle-token=a896fa25d5dca658b03b43c51c11d6cf25ee8598 "Badge")
 
 ## Usage
 
