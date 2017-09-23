@@ -140,6 +140,7 @@
     (.toString s)))
 
 (defn canonical-request
+  "Returns canonical request as string"
   [{:keys [method uri query payload headers]}]
   (str
    method \newline
@@ -151,13 +152,17 @@
        (sha-256 (to-utf8 payload))
        EMPTY_SHA256)))
 
+;; ---------- AWS authentication
+
 (defn signature
+  "Returns hmac-256 signature given credential scope, secret and string-to-sign"
   [{:keys [secret short-timestamp region service string-to-sign]}]
   (-> (signing-key secret short-timestamp region service)
       (hmac-256 string-to-sign)
       (as-hex-str)))
 
 (defn string-to-sign
+  "Returns string to sign given data of request-to-sign"
   [{:keys [timestamp method uri query payload short-timestamp region service headers]}]
   (str
    "AWS4-HMAC-SHA256\n"
@@ -168,6 +173,7 @@
                        :payload payload :headers headers})))))
 
 (defn authorize
+  "Returns complete authorization header given data of request-to-sign including headers"
   [{:keys [method uri query headers payload region service access-key secret]}]
   (let [canonical-headers (canonical-headers headers)
         timestamp (get canonical-headers "x-amz-date")
