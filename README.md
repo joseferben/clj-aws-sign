@@ -4,6 +4,12 @@ A clojure library that implements the [Signature Version 4 Signing Process](http
 
 This library [passes](https://circleci.com/gh/jerben/clj-aws-sign) the [Signature Version 4 Test Suite](http://docs.aws.amazon.com/general/latest/gr/signature-v4-test-suite.html). ![Badge](https://circleci.com/gh/jerben/clj-aws-sign.svg?style=shield&circle-token=a896fa25d5dca658b03b43c51c11d6cf25ee8598 "Badge")
 
+[![Clojars Project](https://img.shields.io/clojars/v/clj-aws-sign.svg)](https://clojars.org/clj-aws-sign)
+
+```clojure
+[clj-aws-sign "0.1.1"]
+```
+
 ## Usage
 
 Simple example:

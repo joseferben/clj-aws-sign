@@ -28,7 +28,7 @@
    "ap-northeast-1" "s3-ap-northeast-1"
    "sa-east-1"      "s3-sa-east-1"})
 
-(defn- zone->host
+(defn zone->host
   "Maps a zone to the full host name" 
   [zone]
   (str (get zone->endpoints zone) ".amazonaws.com"))
