@@ -1,11 +1,11 @@
 (ns clj-aws-sign.core
-  (:require [clojure.string :as str]
-            [ring.util.codec :as codec])
+  (:require [clojure.string :as str])
   (:import java.security.MessageDigest
            javax.crypto.Mac
            javax.crypto.spec.SecretKeySpec
            [java.text DateFormat SimpleDateFormat]
-           [java.util TimeZone]))
+           [java.util TimeZone]
+           [java.net URLEncoder]))
 
 (def EMPTY_SHA256 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
 
@@ -29,12 +29,21 @@
    "sa-east-1"      "s3-sa-east-1"})
 
 (defn zone->host
-  "Maps a zone to the full host name" 
+  "Maps a zone to the full host name"
   [zone]
   (str (get zone->endpoints zone) ".amazonaws.com"))
 
 (defn- as-hex [bytes]
   (map #(format "%02x" (if (neg? %) (bit-and % 0xFF) %)) bytes))
+
+(defn url-encode
+  "Percent encode the string to put in a URL."
+  [^String s]
+  (-> s
+      (URLEncoder/encode "UTF-8")
+      (.replace "+" "%20")
+      (.replace "*" "%2A")
+      (.replace "%7E" "~")))
 
 (defn- ^String as-hex-str [bytes]
   (apply str (as-hex bytes)))
@@ -60,17 +69,19 @@
 (defn- signing-key
   [secret-key short-timestamp region service]
   (-> (hmac-256 (to-utf8 (str "AWS4" secret-key)) short-timestamp)
-                        (hmac-256 region)
-                        (hmac-256 service)
-                        (hmac-256 "aws4_request")))
+      (hmac-256 region)
+      (hmac-256 service)
+      (hmac-256 "aws4_request")))
 
-(defn- query->string 
+(defn- query->string
   [query]
   (->> query
-      (sort (fn [[k1 v1] [k2 v2]] (compare v1 v2)))
-      (map #(map codec/url-encode %))
-      (#(map (fn [pair] (str/join "=" pair)) %))
-      (str/join "&")))
+       (sort (fn [[k1 v1] [k2 v2]] (if (not= k1 k2)
+                                     (compare k1 k2)
+                                     (compare v1 v2))))
+       (map #(map url-encode %))
+       (#(map (fn [pair] (str/join "=" pair)) %))
+       (str/join "&")))
 
 (defn- change-directory
   [segments]
@@ -99,15 +110,15 @@
 (defn- resolve-path
   [path]
   (->> (str/split path #"/")
-      (filter (both not-blank? not-dot?))
-      (change-directory)
-      (str/join "/")
-      (str "/")))
+       (filter (both not-blank? not-dot?))
+       (change-directory)
+       (str/join "/")
+       (str "/")))
 
 (defn- encode-uri
   [uri]
   (->> (str/split uri #"/")
-       (map codec/url-encode)
+       (map url-encode)
        (str/join "/")
        (#(if (str/blank? %) "/" %))))
 
@@ -126,7 +137,6 @@
       (encode-uri)
       (append-slash uri)
       (replace-double-slash)))
-
 
 (defn canonical-headers [headers]
   (into (sorted-map)
