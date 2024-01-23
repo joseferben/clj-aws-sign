@@ -57,6 +57,24 @@ The following options are optional:
 
 * `:payload` - The request body 
 
+
+# Building 
+
+## Using lein
+```
+lein test
+lein jar
+```
+
+## Using Dockergile 
+```
+docker build \
+    --build-arg DOCKER_URL=docker.io \
+	--build-arg DOCKER_ORG='alphaprosoft' \
+	--build-arg ARTIFACT_ORG='com.github.clj-aws-sign' \
+	--build-arg BUILD_ID=0 \
+	-f Dockerfile .
+```
 ## License
 
 Copyright © 2017 Josef Erben

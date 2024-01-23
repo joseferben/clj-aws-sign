@@ -8,6 +8,7 @@
            [java.net URLEncoder]))
 
 (def EMPTY_SHA256 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+(def UNSIGNED_PAYLOD "UNSIGNED-PAYLOAD")
 
 (def ^DateFormat iso8601-date-format
   (doto (SimpleDateFormat. "yyyyMMdd'T'HHmmss'Z'")
@@ -160,6 +161,8 @@
    (str/join ";" (keys headers)) \newline
    (or (get headers "x-amz-content-sha256")
        (sha-256 (to-utf8 payload))
+       (when (= payload UNSIGNED_PAYLOD)
+         UNSIGNED_PAYLOD)
        EMPTY_SHA256)))
 
 ;; ---------- AWS authentication
@@ -173,18 +176,22 @@
 
 (defn string-to-sign
   "Returns string to sign given data of request-to-sign"
-  [{:keys [timestamp method uri query payload short-timestamp region service headers]}]
-  (str
-   "AWS4-HMAC-SHA256\n"
-   timestamp "\n"
-   short-timestamp "/" region "/" service "/aws4_request" "\n"
-   (sha-256 (to-utf8 (canonical-request
-                      {:method method :uri uri :query query
-                       :payload payload :headers headers})))))
+  [{:keys [timestamp method uri query payload short-timestamp region service headers debug]}]
+  (let [cannonical-request-str (canonical-request
+                                {:method method :uri uri :query query
+                                 :payload payload :headers headers})]
+    (when debug
+      (println "Cannonical request")
+      (println cannonical-request-str))
+    (str
+     "AWS4-HMAC-SHA256\n"
+     timestamp "\n"
+     short-timestamp "/" region "/" service "/aws4_request" "\n"
+     (sha-256 (to-utf8 cannonical-request-str)))))
 
 (defn authorize
   "Returns complete authorization header given data of request-to-sign including headers"
-  [{:keys [method uri query headers payload date region service access-key secret-key]}]
+  [{:keys [method uri query headers payload date region service access-key secret-key debug]}]
   (let [canonical-headers (canonical-headers headers)
         timestamp (get canonical-headers "x-amz-date" date)
         short-timestamp (.substring ^String timestamp 0 8)
@@ -192,11 +199,17 @@
                                         :uri uri :query query :payload payload
                                         :short-timestamp short-timestamp
                                         :region region :service service
-                                        :headers canonical-headers})
+                                        :headers canonical-headers
+                                        :debug debug})
         signature (signature {:secret-key secret-key
                               :short-timestamp short-timestamp
                               :region region :service service
                               :string-to-sign string-to-sign})]
+    (when debug
+      (println "String to sign")
+      (println string-to-sign)
+      (println "Signature")
+      (println signature))
     (str
      "AWS4-HMAC-SHA256 "
      "Credential=" access-key "/" short-timestamp "/" region "/" service
