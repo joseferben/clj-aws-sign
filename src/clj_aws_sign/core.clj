@@ -160,9 +160,9 @@
    (stringify-headers headers)   \newline
    (str/join ";" (keys headers)) \newline
    (or (get headers "x-amz-content-sha256")
-       (sha-256 (to-utf8 payload))
        (when (= payload UNSIGNED_PAYLOD)
          UNSIGNED_PAYLOD)
+       (sha-256 (to-utf8 payload))
        EMPTY_SHA256)))
 
 ;; ---------- AWS authentication
