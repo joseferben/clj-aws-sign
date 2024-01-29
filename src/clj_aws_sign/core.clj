@@ -8,7 +8,7 @@
            [java.net URLEncoder]))
 
 (def EMPTY_SHA256 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-(def UNSIGNED_PAYLOD "UNSIGNED-PAYLOAD")
+(def UNSIGNED_PAYLOAD "UNSIGNED-PAYLOAD")
 
 (def ^DateFormat iso8601-date-format
   (doto (SimpleDateFormat. "yyyyMMdd'T'HHmmss'Z'")
@@ -160,8 +160,8 @@
    (stringify-headers headers)   \newline
    (str/join ";" (keys headers)) \newline
    (or (get headers "x-amz-content-sha256")
-       (when (= payload UNSIGNED_PAYLOD)
-         UNSIGNED_PAYLOD)
+       (when (= payload UNSIGNED_PAYLOAD)
+         UNSIGNED_PAYLOAD)
        (sha-256 (to-utf8 payload))
        EMPTY_SHA256)))
 
