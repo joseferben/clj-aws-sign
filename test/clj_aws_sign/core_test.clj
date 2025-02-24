@@ -101,3 +101,27 @@
                                        :payload payload :region region :service service
                                        :access-key access-key-id :secret-key secret-key}))
            (str "returns valid authorization header for " name)))))))
+
+(deftest content-sha256
+  (testing "content-sha256"
+    (is
+     (= sut/EMPTY_SHA256 (sut/content-sha256 nil))
+     "returns empty sha256 for nil payload")
+
+    (is
+     (= sut/EMPTY_SHA256 (sut/content-sha256 ""))
+     "returns empty sha256 for empty payload")
+
+    (is
+     (= "36a9e7f1c95b82ffb99743e0c5c4ce95d83c9a430aac59f84ef3cbfab6145068"
+        (sut/content-sha256 " "))
+     "returns valid sha256 for space payload")
+
+    (is
+     (= "3b435d551623a7ac9499f66703d2eccb10299334bace5a9590982cdabd8c137f"
+       (sut/content-sha256 "{\"encoded payload\": \"value\"}"))
+     "returns valid sha256 for non-empty payload")
+
+    (is
+     (= sut/UNSIGNED_PAYLOAD (sut/content-sha256 sut/UNSIGNED_PAYLOAD))
+      "returns UNSIGNED_PAYLOAD for UNSIGNED_PAYLOAD")))

@@ -150,6 +150,14 @@
         (.append k) (.append ":") (.append v) (.append "\n")))
     (.toString s)))
 
+(defn content-sha256
+  "Returns content sha256 given payload"
+  [payload]
+  (cond
+    (= payload UNSIGNED_PAYLOAD) UNSIGNED_PAYLOAD
+    (nil? payload) EMPTY_SHA256
+    :else (sha-256 (to-utf8 payload))))
+
 (defn canonical-request
   "Returns canonical request as string"
   [{:keys [method uri query payload headers]}]
@@ -160,10 +168,7 @@
    (stringify-headers headers)   \newline
    (str/join ";" (keys headers)) \newline
    (or (get headers "x-amz-content-sha256")
-       (when (= payload UNSIGNED_PAYLOAD)
-         UNSIGNED_PAYLOAD)
-       (sha-256 (to-utf8 payload))
-       EMPTY_SHA256)))
+       (content-sha256 payload))))
 
 ;; ---------- AWS authentication
 
